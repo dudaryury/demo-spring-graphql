@@ -2,14 +2,15 @@ package com.demo.graphql.demographql;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.graphql.data.method.annotation.BatchMapping;
+import org.springframework.graphql.data.method.annotation.Argument;
+import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @SpringBootApplication
 public class DemoGraphqlApplication {
@@ -19,8 +20,17 @@ public class DemoGraphqlApplication {
     }
 
     @Controller
-    class GraphController {
-        private final List<Customer> CUSTOMERS = List.of(new Customer(1, "Serega"), new Customer(2, "Ivan"), new Customer(3, "Yura"));
+    class MutationController {
+        private final List<Customer> CUSTOMERS = new ArrayList<>() {
+            {
+                add(new Customer(1, "Serega"));
+                add(new Customer(2, "Ivan"));
+                add(new Customer(3, "Yura"));
+            }
+        };
+
+        private final AtomicInteger ID_GENERATOR = new AtomicInteger(4);
+
 
         @QueryMapping
             //or Flux<Customer>
@@ -28,17 +38,19 @@ public class DemoGraphqlApplication {
             return CUSTOMERS;
         }
 
-        @BatchMapping
-        Map<Customer, Account> account(List<Customer> customers) {
-            return customers.stream()
-                    .collect(Collectors.toMap(Function.identity(),
-                            customer -> new Account(customer.id)));
+        @QueryMapping
+        Customer customerById(@Argument Integer id) {
+            return CUSTOMERS.stream().filter(customer -> Objects.equals(customer.id, id)).findFirst().orElse(null);
         }
 
-/*        @SchemaMapping(typeName = "Customer")
-        Account account(Customer customer) {
-            return new Account(customer.id);
-        }*/
+        @MutationMapping
+            //@SchemaMapping(typeName = "Mutation", field = "addCustomer")
+        Customer addCustomer(@Argument String name) {
+            var id = ID_GENERATOR.incrementAndGet();
+            Customer customer = new Customer(id, name);
+            CUSTOMERS.add(customer);
+            return customer;
+        }
     }
 
     public static class Customer {
