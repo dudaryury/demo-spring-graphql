@@ -2,15 +2,14 @@ package com.demo.graphql.demographql;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.graphql.data.method.annotation.Argument;
-import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.graphql.data.method.annotation.SubscriptionMapping;
 import org.springframework.stereotype.Controller;
+import reactor.core.publisher.Flux;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.stream.Stream;
 
 @SpringBootApplication
 public class DemoGraphqlApplication {
@@ -20,54 +19,30 @@ public class DemoGraphqlApplication {
     }
 
     @Controller
-    class MutationController {
-        private final List<Customer> CUSTOMERS = new ArrayList<>() {
-            {
-                add(new Customer(1, "Serega"));
-                add(new Customer(2, "Ivan"));
-                add(new Customer(3, "Yura"));
-            }
-        };
+    public class GreetingsController {
 
-        private final AtomicInteger ID_GENERATOR = new AtomicInteger(4);
-
-
-        @QueryMapping
-            //or Flux<Customer>
-        List<Customer> customers() {
-            return CUSTOMERS;
+        @SubscriptionMapping
+        public Flux<Greeting> greetings() {
+            return Flux.fromStream(Stream.generate(() -> new Greeting("Hello World @ " + Instant.now())))
+                    .delayElements(Duration.ofSeconds(1))
+                    .take(5);
         }
 
         @QueryMapping
-        Customer customerById(@Argument Integer id) {
-            return CUSTOMERS.stream().filter(customer -> Objects.equals(customer.id, id)).findFirst().orElse(null);
-        }
-
-        @MutationMapping
-            //@SchemaMapping(typeName = "Mutation", field = "addCustomer")
-        Customer addCustomer(@Argument String name) {
-            var id = ID_GENERATOR.incrementAndGet();
-            Customer customer = new Customer(id, name);
-            CUSTOMERS.add(customer);
-            return customer;
+        public Greeting greeting() {
+            return new Greeting("Hello World");
         }
     }
 
-    public static class Customer {
-        Integer id;
-        String name;
+    public static class Greeting {
+        private final String greeting;
 
-        public Customer(Integer id, String name) {
-            this.id = id;
-            this.name = name;
+        public Greeting(String greeting) {
+            this.greeting = greeting;
         }
-    }
 
-    public static class Account {
-        Integer id;
-
-        public Account(Integer id) {
-            this.id = id;
+        public String getGreeting() {
+            return greeting;
         }
     }
 }
