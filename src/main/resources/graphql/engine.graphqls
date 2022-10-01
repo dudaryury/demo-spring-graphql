@@ -5,6 +5,10 @@ type Query {
     customers: [Customer]
 }
 
+type Subscription {
+    customersSubscription: Customer
+}
+
 type Customer {
     id: ID
     name: String

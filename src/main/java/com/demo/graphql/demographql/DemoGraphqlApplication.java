@@ -4,10 +4,15 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.graphql.data.method.annotation.SubscriptionMapping;
 import org.springframework.stereotype.Controller;
+import reactor.core.publisher.Flux;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 @SpringBootApplication
 public class DemoGraphqlApplication {
@@ -38,19 +43,53 @@ public class DemoGraphqlApplication {
         }
 
         @QueryMapping
-        //or Flux<Customer>
+            //or Flux<Customer>
         List<Customer> customers() {
             return CUSTOMERS;
+        }
+
+        @SubscriptionMapping
+        Flux<Customer> customersSubscription() {
+            return Flux.fromStream(Stream.generate(() -> new Customer(1, Instant.now().toString())))
+                    .delayElements(Duration.ofSeconds(1))
+                    .take(5);
         }
     }
 
     public static class Customer {
-        Integer id;
-        String name;
+        private Integer id;
+        private String name;
 
         public Customer(Integer id, String name) {
             this.id = id;
             this.name = name;
+        }
+
+        public Customer() {
+        }
+
+        public Integer getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setId(Integer id) {
+            this.id = id;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return "Customer{" +
+                    "id=" + id +
+                    ", name='" + name + '\'' +
+                    '}';
         }
     }
 }
