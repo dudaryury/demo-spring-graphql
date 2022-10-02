@@ -1,8 +1,10 @@
 type Query {
-    hello: String
-    helloWithName(name: String): String
     customerById(id: ID): Customer
     customers: [Customer]
+}
+
+type Mutation {
+    insert(name: String): Customer
 }
 
 type Customer {
